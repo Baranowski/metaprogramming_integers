@@ -2,12 +2,17 @@
 
 typedef unsigned char uint8_t;
 
-// List of uint8_t definition:
+// Bit definition
 
-// The `:` operator known from Haskell, working only on the uint8_t type
-template <uint8_t H, class TAIL>
+struct Zero {};
+struct One {};
+
+// Generic list definition
+
+// The `:` operator known from Haskell
+template <class HEAD, class TAIL>
 struct Cons {
-    static constexpr uint8_t head = H;
+    typedef HEAD head;
     typedef TAIL tail;
 };
 
@@ -21,7 +26,7 @@ struct Reverse{
         typename Reverse<
             typename List::tail,
             Cons<
-                List::head,
+                typename List::head,
                 Agg
             >
         >::result
@@ -36,12 +41,12 @@ struct Reverse<Leaf, Agg>{
 };
 
 namespace {
-    typedef Cons<1, Cons<2, Cons<3, Leaf>>> a123;
-    typedef typename Reverse<a123, Leaf>::result r123;
-    static_assert(r123::head == 3, "a");
-    static_assert(r123::tail::head == 2, "a");
-    static_assert(r123::tail::tail::head == 1, "a");
-    static_assert(std::is_same<r123::tail::tail::tail, Leaf>::value, "a");
+    typedef Cons<Zero, Cons<One, Cons<One, Leaf>>> a011;
+    typedef typename Reverse<a011, Leaf>::result r011;
+    static_assert(std::is_same<r011::head, One>::value, "a");
+    static_assert(std::is_same<r011::tail::head, One>::value, "a");
+    static_assert(std::is_same<r011::tail::tail::head, Zero>::value, "a");
+    static_assert(std::is_same<r011::tail::tail::tail, Leaf>::value, "a");
 };
 
 int main(int argc, char *argv[]) {
