@@ -21,9 +21,9 @@ struct Leaf {};
 // Reversal
 
 template <class List, class Agg>
-struct Reverse{
+struct ReverseHelper{
     typedef
-        typename Reverse<
+        typename ReverseHelper<
             typename List::tail,
             Cons<
                 typename List::head,
@@ -34,15 +34,18 @@ struct Reverse{
 };
 
 template<class Agg>
-struct Reverse<Leaf, Agg>{
+struct ReverseHelper<Leaf, Agg>{
     typedef
         Agg
     result;
 };
 
+template<class List>
+using Reverse = ReverseHelper<List, Leaf>;
+
 namespace {
     typedef Cons<Zero, Cons<One, Cons<One, Leaf>>> a011;
-    typedef typename Reverse<a011, Leaf>::result r011;
+    typedef typename Reverse<a011>::result r011;
     static_assert(std::is_same<r011::head, One>::value, "a");
     static_assert(std::is_same<r011::tail::head, One>::value, "a");
     static_assert(std::is_same<r011::tail::tail::head, Zero>::value, "a");
