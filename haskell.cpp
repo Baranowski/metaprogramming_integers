@@ -180,8 +180,39 @@ namespace {
     static_assert(std::is_same<Xor<One,One>::result, Zero>::value, "a");
 };
 
+
 // FoldL
 
+template<template <class, class> typename Func, class Acc, class List>
+struct FoldL {
+    typedef
+        typename FoldL<
+            Func,
+            typename Func<Acc, typename List::head>::result,
+            typename List::tail
+        >::result
+    result;
+};
+
+template<template <class, class> typename Func, class Acc>
+struct FoldL<Func, Acc, Leaf> {
+    typedef Acc result;
+};
+
+namespace {
+    typedef Leaf a;
+    typedef Cons<One, a> a1;
+    typedef Cons<Zero, a1> a01;
+    typedef Cons<Zero, a01> a001;
+    typedef Cons<One, a001> a1001;
+    template<class List>
+    using XorFoldL = FoldL<Xor, Zero, List>;
+    static_assert(std::is_same<XorFoldL<a>::result, Zero>::value, "a");
+    static_assert(std::is_same<XorFoldL<a1>::result, One>::value, "a");
+    static_assert(std::is_same<XorFoldL<a01>::result, One>::value, "a");
+    static_assert(std::is_same<XorFoldL<a001>::result, One>::value, "a");
+    static_assert(std::is_same<XorFoldL<a1001>::result, Zero>::value, "a");
+};
 
 // Addition
 
