@@ -12,8 +12,8 @@ struct One {};
 // The `:` operator known from Haskell
 template <class Head, class Tail>
 struct Cons {
-    typedef Head head;
-    typedef Tail tail;
+    using head = Head;
+    using tail = Tail;
 };
 
 struct Leaf {};
@@ -23,30 +23,27 @@ struct Leaf {};
 
 template <class List, class Agg>
 struct ReverseHelper{
-    typedef
+    using result = 
         typename ReverseHelper<
             typename List::tail,
             Cons<
                 typename List::head,
                 Agg
             >
-        >::result
-    result;
+        >::result;
 };
 
 template<class Agg>
 struct ReverseHelper<Leaf, Agg>{
-    typedef
-        Agg
-    result;
+    using result = Agg;
 };
 
 template<class List>
-using Reverse = ReverseHelper<List, Leaf>;
+using Reverse = typename ReverseHelper<List, Leaf>::result;
 
 namespace {
-    typedef Cons<Zero, Cons<One, Cons<One, Leaf>>> a011;
-    typedef typename Reverse<a011>::result r011;
+    using a011 = Cons<Zero, Cons<One, Cons<One, Leaf>>>;
+    using r011 = Reverse<a011>;
     static_assert(std::is_same<r011::head, One>::value, "a");
     static_assert(std::is_same<r011::tail::head, One>::value, "a");
     static_assert(std::is_same<r011::tail::tail::head, Zero>::value, "a");
@@ -58,8 +55,8 @@ namespace {
 
 template<class Left, class Right>
 struct Pair : public Cons<Left, Cons<Right, Leaf> > {
-    typedef Left left;
-    typedef Right right;
+    using left = Left;
+    using right = Right;
 };
 
 
@@ -68,7 +65,7 @@ struct Pair : public Cons<Left, Cons<Right, Leaf> > {
 // Neither of the lists has ended
 template<class ListA, class ListB, class Default, class Agg>
 struct ZipWithDefaultHelper{
-    typedef
+    using result = 
         typename ZipWithDefaultHelper<
             typename ListA::tail,
             typename ListB::tail,
@@ -77,22 +74,19 @@ struct ZipWithDefaultHelper{
                 Pair<typename ListA::head, typename ListB::head>,
                 Agg
             >
-        >::result
-    result;
+        >::result;
 };
 
 // Both lists have ended
 template<class Default, class Agg>
 struct ZipWithDefaultHelper<Leaf, Leaf, Default, Agg> {
-    typedef
-        typename Reverse<Agg>::result
-    result;
+    using result = Reverse<Agg>;
 };
 
 // Left list has ended
 template<class ListB, class Default, class Agg>
 struct ZipWithDefaultHelper<Leaf, ListB, Default, Agg> {
-    typedef
+    using result = 
         typename ZipWithDefaultHelper<
             Leaf,
             typename ListB::tail,
@@ -101,14 +95,13 @@ struct ZipWithDefaultHelper<Leaf, ListB, Default, Agg> {
                 Pair<Default, typename ListB::head>,
                 Agg
             >
-        >::result
-    result;
+        >::result;
 };
 
 // Right list has ended
 template<class ListA, class Default, class Agg>
 struct ZipWithDefaultHelper<ListA, Leaf, Default, Agg> {
-    typedef
+    using result = 
         typename ZipWithDefaultHelper<
             typename ListA::tail,
             Leaf,
@@ -117,17 +110,16 @@ struct ZipWithDefaultHelper<ListA, Leaf, Default, Agg> {
                 Pair<typename ListA::head, Default>,
                 Agg
             >
-        >::result
-    result;
+        >::result;
 };
 
 template<class ListA, class ListB, class Default>
-using ZipWithDefault = ZipWithDefaultHelper<ListA, ListB, Default, Leaf>;
+using ZipWithDefault = typename ZipWithDefaultHelper<ListA, ListB, Default, Leaf>::result;
 
 namespace {
-    typedef Cons<One, Cons<Zero, Cons<One, Leaf>>> a101;
-    typedef Cons<Zero, Cons<Zero, Cons<One, Cons<One, Leaf>>>> b0011;
-    typedef typename ZipWithDefault<a101, b0011, Zero>::result zipped;
+    using a101 = Cons<One, Cons<Zero, Cons<One, Leaf>>>;
+    using b0011 = Cons<Zero, Cons<Zero, Cons<One, Cons<One, Leaf>>>>;
+    using zipped = ZipWithDefault<a101, b0011, Zero>;
     static_assert(std::is_same<
         zipped::head,
         Pair<One, Zero>
@@ -185,26 +177,25 @@ namespace {
 
 template<template <class, class> typename Func, class Acc, class List>
 struct FoldL {
-    typedef
+    using result = 
         typename FoldL<
             Func,
             typename Func<Acc, typename List::head>::result,
             typename List::tail
-        >::result
-    result;
+        >::result;
 };
 
 template<template <class, class> typename Func, class Acc>
 struct FoldL<Func, Acc, Leaf> {
-    typedef Acc result;
+    using result = Acc;
 };
 
 namespace {
-    typedef Leaf a;
-    typedef Cons<One, a> a1;
-    typedef Cons<Zero, a1> a01;
-    typedef Cons<Zero, a01> a001;
-    typedef Cons<One, a001> a1001;
+    using a = Leaf;
+    using a1 = Cons<One, a>;
+    using a01 = Cons<Zero, a1>;
+    using a001 = Cons<Zero, a01>;
+    using a1001 = Cons<One, a001>;
     template<class List>
     using XorFoldL = FoldL<Xor, Zero, List>;
     static_assert(std::is_same<XorFoldL<a>::result, Zero>::value, "a");
@@ -223,8 +214,8 @@ struct Add {
         typename FoldL<
             AddH,
             typename ZipWithDefault<
-                typename Reverse<A>::result,
-                typename Reverse<B>::result,
+                typename Reverse<Cons<Zero, A>>::result,
+                typename Reverse<Cons<Zero, B>>::result,
                 Zero
             >::result,
             Leaf
