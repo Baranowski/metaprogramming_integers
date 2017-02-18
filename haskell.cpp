@@ -62,8 +62,10 @@ struct Pair : public Cons<Left, Cons<Right, Leaf> > {
     typedef Right right;
 };
 
+
 // ZipWithDefault
 
+// Neither of the lists has ended
 template<class ListA, class ListB, class Default, class Agg>
 struct ZipWithDefaultHelper{
     typedef
@@ -79,6 +81,7 @@ struct ZipWithDefaultHelper{
     result;
 };
 
+// Both lists have ended
 template<class Default, class Agg>
 struct ZipWithDefaultHelper<Leaf, Leaf, Default, Agg> {
     typedef
@@ -86,6 +89,7 @@ struct ZipWithDefaultHelper<Leaf, Leaf, Default, Agg> {
     result;
 };
 
+// Left list has ended
 template<class ListB, class Default, class Agg>
 struct ZipWithDefaultHelper<Leaf, ListB, Default, Agg> {
     typedef
@@ -101,6 +105,7 @@ struct ZipWithDefaultHelper<Leaf, ListB, Default, Agg> {
     result;
 };
 
+// Right list has ended
 template<class ListA, class Default, class Agg>
 struct ZipWithDefaultHelper<ListA, Leaf, Default, Agg> {
     typedef
@@ -145,6 +150,38 @@ namespace {
     >::value, "a");
         
 };
+
+
+
+// Xor
+
+template<class A>
+struct Neg { };
+
+template<>
+struct Neg<Zero> { typedef One result; };
+
+template<>
+struct Neg<One> { typedef Zero result; };
+
+template<class A, class B>
+struct Xor { };
+
+template<class B>
+struct Xor<Zero, B> { typedef B result; };
+
+template<class B>
+struct Xor<One, B> { typedef typename Neg<B>::result result; };
+
+namespace {
+    static_assert(std::is_same<Xor<Zero,Zero>::result, Zero>::value, "a");
+    static_assert(std::is_same<Xor<One,Zero>::result, One>::value, "a");
+    static_assert(std::is_same<Xor<Zero,One>::result, One>::value, "a");
+    static_assert(std::is_same<Xor<One,One>::result, Zero>::value, "a");
+};
+
+// FoldL
+
 
 // Addition
 
