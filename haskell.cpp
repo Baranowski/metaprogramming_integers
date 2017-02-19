@@ -41,11 +41,11 @@ struct ReverseHelper<Leaf, Agg>{
 };
 
 template<class List>
-using Reverse = typename ReverseHelper<List, Leaf>::result;
+using Reverse = ReverseHelper<List, Leaf>;
 
-namespace {
+namespace test_Reverse {
     using a011 = Cons<Zero, Cons<One, Cons<One, Leaf>>>;
-    using r011 = Reverse<a011>;
+    using r011 = typename Reverse<a011>::result;
     static_assert(std::is_same<r011::head, One>::value, "a");
     static_assert(std::is_same<r011::tail::head, One>::value, "a");
     static_assert(std::is_same<r011::tail::tail::head, Zero>::value, "a");
@@ -82,7 +82,7 @@ struct ZipWithDefaultHelper{
 // Both lists have ended
 template<class Default, class Agg>
 struct ZipWithDefaultHelper<Leaf, Leaf, Default, Agg> {
-    using result = Reverse<Agg>;
+    using result = typename Reverse<Agg>::result;
 };
 
 // Left list has ended
@@ -116,12 +116,12 @@ struct ZipWithDefaultHelper<ListA, Leaf, Default, Agg> {
 };
 
 template<class ListA, class ListB, class Default>
-using ZipWithDefault = typename ZipWithDefaultHelper<ListA, ListB, Default, Leaf>::result;
+using ZipWithDefault = ZipWithDefaultHelper<ListA, ListB, Default, Leaf>;
 
-namespace {
+namespace test_ZipWithDefault {
     using a101 = Cons<One, Cons<Zero, Cons<One, Leaf>>>;
     using b0011 = Cons<Zero, Cons<Zero, Cons<One, Cons<One, Leaf>>>>;
-    using zipped = ZipWithDefault<a101, b0011, Zero>;
+    using zipped = typename ZipWithDefault<a101, b0011, Zero>::result;
     static_assert(std::is_same<
         zipped::head,
         Pair<One, Zero>
@@ -167,7 +167,7 @@ struct Xor<Zero, B> { typedef B result; };
 template<Bit B>
 struct Xor<One, B> { typedef typename Neg<B>::result result; };
 
-namespace {
+namespace test_Xor {
     static_assert(std::is_same<Xor<Zero,Zero>::result, Zero>::value, "a");
     static_assert(std::is_same<Xor<One,Zero>::result, One>::value, "a");
     static_assert(std::is_same<Xor<Zero,One>::result, One>::value, "a");
@@ -192,7 +192,7 @@ struct FoldL<Func, Acc, Leaf> {
     using result = Acc;
 };
 
-namespace {
+namespace test_FoldL {
     using a = Leaf;
     using a1 = Cons<One, a>;
     using a01 = Cons<Zero, a1>;
@@ -229,7 +229,7 @@ struct Map<Func, Leaf> {
     using result = Leaf;
 };
 
-namespace {
+namespace test_Map {
     using empty = Leaf;
     static_assert(std::is_same<empty, Map<Neg, empty>::result>::value);
 
@@ -243,29 +243,133 @@ namespace {
     static_assert(std::is_same<negated, a0010>::value);
 };
 
+// IfSameThenElse
+
+template<class Left, class Right, class Then, class Else>
+struct IfSameThenElse {
+    using result = Else;
+};
+
+template<class Both, class Then, class Else>
+struct IfSameThenElse<Both, Both, Then, Else> {
+    using result = Then;
+};
+
+namespace test_IfSameThenElse {
+    static_assert(std::is_same<IfSameThenElse<One, One, One, Zero>::result, One>::value);
+    static_assert(std::is_same<IfSameThenElse<One, Zero, One, Zero>::result, Zero>::value);
+};
+
 // Addition
 
 // Acc is a pair <result_so_far, carry-over>
 
-/*
 // Just a helper value used internally for adding
 struct Two {};
 
+template<class A>
+struct SumBits { };
+
+template<class A>
+struct SumBits<Pair<Zero, A>> {
+    using result = A;
+};
+
+template<>
+struct SumBits<Pair<One, Zero>> {
+    using result = One;
+};
+
+template<>
+struct SumBits<Pair<One, One>> {
+    using result = Two;
+};
+
+template<class CarryOverAndAcc, class NextBit>
+struct AddHelper {};
+
+template<class CarryOver, class Acc>
+struct AddHelper<Pair<CarryOver, Acc>, Two> {
+    using result =
+        Pair<
+            One,
+            Cons<CarryOver, Acc>
+        >;
+};
+
+template<class Acc>
+struct AddHelper<Pair<One, Acc>, One> {
+    using result =
+        typename AddHelper<Pair<Zero, Acc>, Two>::result;
+};
+
+template<class Acc>
+struct AddHelper<Pair<Zero, Acc>, One> {
+    using result =
+        Pair<
+            Zero,
+            Cons<One, Acc>
+        >;
+};
+
+template<class CarryOver, class Acc>
+struct AddHelper<Pair<CarryOver, Acc>, Zero> {
+    using result =
+        Pair<
+            Zero,
+            Cons<CarryOver, Acc>
+        >;
+};
 
 template<class A, class B>
 struct Add {
-    using resultWithCarryOver = 
+    using zippedReversed = 
+        typename ZipWithDefault<
+            typename Reverse<A>::result,
+            typename Reverse<B>::result,
+            Zero
+        >::result;
+
+    using resultReversedWithTwos = 
         typename Map<
             SumBits,
-            typename ZipWithDefault<
-                typename Reverse<A>::result,
-                typename Reverse<B>::result,
-                Pair<Zero, Leaf>
-            >::result,
-            Leaf
+            zippedReversed
+        >::result;
+
+    using carryOverAndResult =
+        typename FoldL<
+            AddHelper,
+            Pair<Zero, Leaf>,
+            resultReversedWithTwos
+        >::result;
+
+    using result =
+        typename IfSameThenElse<
+            typename carryOverAndResult::left,
+            One,
+            Cons<One, typename carryOverAndResult::right>,
+            typename carryOverAndResult::right
         >::result;
 };
-*/
+
+namespace test_Add {
+    using a1 = Cons<One, Leaf>;
+    using a1plus1 = Add<a1, a1>;
+    static_assert(std::is_same<a1plus1::zippedReversed, Cons<Pair<One, One>, Leaf>>::value);
+    static_assert(std::is_same<a1plus1::resultReversedWithTwos, Cons<Two, Leaf>>::value);
+
+    using a10011 = Cons<One, Cons<Zero, Cons<Zero, Cons<One, Cons<One, Leaf>>>>>;
+    using a11 = Cons<One, Cons<One, Leaf>>;
+    using a10110 = Cons<One, Cons<Zero, Cons<One, Cons<One, Cons<Zero, Leaf>>>>>;
+    static_assert(std::is_same<Add<a10011, a11>::result, a10110>::value);
+
+    using a01100 = typename Map<Neg, a10011>::result;
+    using a11111 = Cons<One, Cons<One, Cons<One, Cons<One, Cons<One, Leaf>>>>>;
+    static_assert(std::is_same<Add<a01100, a10011>::result, a11111>::value);
+
+    using a101011 = Cons<One, Cons<Zero, Cons<One, Cons<Zero, Cons<One, Cons<One, Leaf>>>>>>;
+    static_assert(std::is_same<Add<a01100, a11111>::result, a101011>::value);
+};
 
 int main(int argc, char *argv[]) {
     return 0;
