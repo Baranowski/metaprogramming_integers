@@ -1,2 +1,2 @@
 haskell: haskell.cpp
-	g++ -o haskell haskell.cpp -std=c++1z
+	g++-6 -o haskell haskell.cpp -std=c++1z -fconcepts

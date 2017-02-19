@@ -6,6 +6,8 @@
 struct Zero {};
 struct One {};
 
+template<class A>
+concept bool Bit = std::is_same<A, Zero>::value || std::is_same<A, One>::value;
 
 // Generic list definition
 
@@ -147,7 +149,7 @@ namespace {
 
 // Xor
 
-template<class A>
+template<Bit A>
 struct Neg { };
 
 template<>
@@ -156,13 +158,13 @@ struct Neg<Zero> { typedef One result; };
 template<>
 struct Neg<One> { typedef Zero result; };
 
-template<class A, class B>
+template<Bit A, Bit B>
 struct Xor { };
 
-template<class B>
+template<Bit B>
 struct Xor<Zero, B> { typedef B result; };
 
-template<class B>
+template<Bit B>
 struct Xor<One, B> { typedef typename Neg<B>::result result; };
 
 namespace {
@@ -207,19 +209,25 @@ namespace {
 
 // Addition
 
+// Acc is a pair <result_so_far, carry-over>
 /*
+template<class Acc, class PairOfBits>
+struct AddH {
+    using su
+};
+
 template<class A, class B>
 struct Add {
-    typedef
+    using resultWithCarryOver = 
         typename FoldL<
             AddH,
             typename ZipWithDefault<
-                typename Reverse<Cons<Zero, A>>::result,
-                typename Reverse<Cons<Zero, B>>::result,
-                Zero
+                typename Reverse<A>::result,
+                typename Reverse<B>::result,
+                Pair<Zero, Leaf>
             >::result,
             Leaf
-    result;
+        >::result;
 };
 */
 
