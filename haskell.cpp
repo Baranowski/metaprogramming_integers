@@ -207,20 +207,56 @@ namespace {
     static_assert(std::is_same<XorFoldL<a1001>::result, Zero>::value, "a");
 };
 
+
+// Map
+
+template<template <class> class Func, class List>
+struct Map {
+    using result =
+        Cons<
+            typename Func<
+                typename List::head
+            >::result,
+            typename Map<
+                Func,
+                typename List::tail
+            >::result
+        >;
+};
+
+template<template <class> class Func>
+struct Map<Func, Leaf> {
+    using result = Leaf;
+};
+
+namespace {
+    using empty = Leaf;
+    static_assert(std::is_same<empty, Map<Neg, empty>::result>::value);
+
+    using a1 = Cons<One, Leaf>;
+    using a0 = Cons<Zero, Leaf>;
+    static_assert(std::is_same<a0, Map<Neg, a1>::result>::value);
+
+    using a1101 = Cons<One, Cons<One, Cons<Zero, Cons<One, Leaf>>>>;
+    using negated = Map<Neg, a1101>::result;
+    using a0010 = Cons<Zero, Cons<Zero, Cons<One, Cons<Zero, Leaf>>>>;
+    static_assert(std::is_same<negated, a0010>::value);
+};
+
 // Addition
 
 // Acc is a pair <result_so_far, carry-over>
+
 /*
-template<class Acc, class PairOfBits>
-struct AddH {
-    using su
-};
+// Just a helper value used internally for adding
+struct Two {};
+
 
 template<class A, class B>
 struct Add {
     using resultWithCarryOver = 
-        typename FoldL<
-            AddH,
+        typename Map<
+            SumBits,
             typename ZipWithDefault<
                 typename Reverse<A>::result,
                 typename Reverse<B>::result,
