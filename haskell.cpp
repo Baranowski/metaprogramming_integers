@@ -1,5 +1,14 @@
-#include <type_traits>
+// For testing
 
+template<class A, class B>
+struct IsSame {
+    static constexpr bool value = false;
+};
+
+template<class A>
+struct IsSame<A, A> {
+    static constexpr bool value = true;
+};
 
 // Bit definition
 
@@ -7,7 +16,7 @@ struct Zero {};
 struct One {};
 
 template<class A>
-concept bool Bit = std::is_same<A, Zero>::value || std::is_same<A, One>::value;
+concept bool Bit = IsSame<A, Zero>::value || IsSame<A, One>::value;
 
 // Generic list definition
 
@@ -46,10 +55,10 @@ using Reverse = ReverseHelper<List, Leaf>;
 namespace test_Reverse {
     using a011 = Cons<Zero, Cons<One, Cons<One, Leaf>>>;
     using r011 = typename Reverse<a011>::result;
-    static_assert(std::is_same<r011::head, One>::value, "a");
-    static_assert(std::is_same<r011::tail::head, One>::value, "a");
-    static_assert(std::is_same<r011::tail::tail::head, Zero>::value, "a");
-    static_assert(std::is_same<r011::tail::tail::tail, Leaf>::value, "a");
+    static_assert(IsSame<r011::head, One>::value);
+    static_assert(IsSame<r011::tail::head, One>::value);
+    static_assert(IsSame<r011::tail::tail::head, Zero>::value);
+    static_assert(IsSame<r011::tail::tail::tail, Leaf>::value);
 };
 
 
@@ -122,26 +131,26 @@ namespace test_ZipWithDefault {
     using a101 = Cons<One, Cons<Zero, Cons<One, Leaf>>>;
     using b0011 = Cons<Zero, Cons<Zero, Cons<One, Cons<One, Leaf>>>>;
     using zipped = typename ZipWithDefault<a101, b0011, Zero>::result;
-    static_assert(std::is_same<
+    static_assert(IsSame<
         zipped::head,
         Pair<One, Zero>
-    >::value, "a");
-    static_assert(std::is_same<
+    >::value);
+    static_assert(IsSame<
         zipped::tail::head,
         Pair<Zero, Zero>
-    >::value, "a");
-    static_assert(std::is_same<
+    >::value);
+    static_assert(IsSame<
         zipped::tail::tail::head,
         Pair<One, One>
-    >::value, "a");
-    static_assert(std::is_same<
+    >::value);
+    static_assert(IsSame<
         zipped::tail::tail::tail::head,
         Pair<Zero, One>
-    >::value, "a");
-    static_assert(std::is_same<
+    >::value);
+    static_assert(IsSame<
         zipped::tail::tail::tail::tail,
         Leaf
-    >::value, "a");
+    >::value);
         
 };
 
@@ -168,10 +177,10 @@ template<Bit B>
 struct Xor<One, B> { typedef typename Neg<B>::result result; };
 
 namespace test_Xor {
-    static_assert(std::is_same<Xor<Zero,Zero>::result, Zero>::value, "a");
-    static_assert(std::is_same<Xor<One,Zero>::result, One>::value, "a");
-    static_assert(std::is_same<Xor<Zero,One>::result, One>::value, "a");
-    static_assert(std::is_same<Xor<One,One>::result, Zero>::value, "a");
+    static_assert(IsSame<Xor<Zero,Zero>::result, Zero>::value);
+    static_assert(IsSame<Xor<One,Zero>::result, One>::value);
+    static_assert(IsSame<Xor<Zero,One>::result, One>::value);
+    static_assert(IsSame<Xor<One,One>::result, Zero>::value);
 };
 
 
@@ -200,11 +209,11 @@ namespace test_FoldL {
     using a1001 = Cons<One, a001>;
     template<class List>
     using XorFoldL = FoldL<Xor, Zero, List>;
-    static_assert(std::is_same<XorFoldL<a>::result, Zero>::value, "a");
-    static_assert(std::is_same<XorFoldL<a1>::result, One>::value, "a");
-    static_assert(std::is_same<XorFoldL<a01>::result, One>::value, "a");
-    static_assert(std::is_same<XorFoldL<a001>::result, One>::value, "a");
-    static_assert(std::is_same<XorFoldL<a1001>::result, Zero>::value, "a");
+    static_assert(IsSame<XorFoldL<a>::result, Zero>::value);
+    static_assert(IsSame<XorFoldL<a1>::result, One>::value);
+    static_assert(IsSame<XorFoldL<a01>::result, One>::value);
+    static_assert(IsSame<XorFoldL<a001>::result, One>::value);
+    static_assert(IsSame<XorFoldL<a1001>::result, Zero>::value);
 };
 
 
@@ -231,17 +240,18 @@ struct Map<Func, Leaf> {
 
 namespace test_Map {
     using empty = Leaf;
-    static_assert(std::is_same<empty, Map<Neg, empty>::result>::value);
+    static_assert(IsSame<empty, Map<Neg, empty>::result>::value);
 
     using a1 = Cons<One, Leaf>;
     using a0 = Cons<Zero, Leaf>;
-    static_assert(std::is_same<a0, Map<Neg, a1>::result>::value);
+    static_assert(IsSame<a0, Map<Neg, a1>::result>::value);
 
     using a1101 = Cons<One, Cons<One, Cons<Zero, Cons<One, Leaf>>>>;
     using negated = Map<Neg, a1101>::result;
     using a0010 = Cons<Zero, Cons<Zero, Cons<One, Cons<Zero, Leaf>>>>;
-    static_assert(std::is_same<negated, a0010>::value);
+    static_assert(IsSame<negated, a0010>::value);
 };
+
 
 // IfSameThenElse
 
@@ -256,13 +266,12 @@ struct IfSameThenElse<Both, Both, Then, Else> {
 };
 
 namespace test_IfSameThenElse {
-    static_assert(std::is_same<IfSameThenElse<One, One, One, Zero>::result, One>::value);
-    static_assert(std::is_same<IfSameThenElse<One, Zero, One, Zero>::result, Zero>::value);
+    static_assert(IsSame<IfSameThenElse<One, One, One, Zero>::result, One>::value);
+    static_assert(IsSame<IfSameThenElse<One, Zero, One, Zero>::result, Zero>::value);
 };
 
 // Addition
 
-// Acc is a pair <result_so_far, carry-over>
 
 // Just a helper value used internally for adding
 struct Two {};
@@ -355,20 +364,20 @@ struct Add {
 namespace test_Add {
     using a1 = Cons<One, Leaf>;
     using a1plus1 = Add<a1, a1>;
-    static_assert(std::is_same<a1plus1::zippedReversed, Cons<Pair<One, One>, Leaf>>::value);
-    static_assert(std::is_same<a1plus1::resultReversedWithTwos, Cons<Two, Leaf>>::value);
+    static_assert(IsSame<a1plus1::zippedReversed, Cons<Pair<One, One>, Leaf>>::value);
+    static_assert(IsSame<a1plus1::resultReversedWithTwos, Cons<Two, Leaf>>::value);
 
     using a10011 = Cons<One, Cons<Zero, Cons<Zero, Cons<One, Cons<One, Leaf>>>>>;
     using a11 = Cons<One, Cons<One, Leaf>>;
     using a10110 = Cons<One, Cons<Zero, Cons<One, Cons<One, Cons<Zero, Leaf>>>>>;
-    static_assert(std::is_same<Add<a10011, a11>::result, a10110>::value);
+    static_assert(IsSame<Add<a10011, a11>::result, a10110>::value);
 
     using a01100 = typename Map<Neg, a10011>::result;
     using a11111 = Cons<One, Cons<One, Cons<One, Cons<One, Cons<One, Leaf>>>>>;
-    static_assert(std::is_same<Add<a01100, a10011>::result, a11111>::value);
+    static_assert(IsSame<Add<a01100, a10011>::result, a11111>::value);
 
     using a101011 = Cons<One, Cons<Zero, Cons<One, Cons<Zero, Cons<One, Cons<One, Leaf>>>>>>;
-    static_assert(std::is_same<Add<a01100, a11111>::result, a101011>::value);
+    static_assert(IsSame<Add<a01100, a11111>::result, a101011>::value);
 };
 
 int main(int argc, char *argv[]) {
