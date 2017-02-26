@@ -475,9 +475,21 @@ namespace test_Tails {
     static_assert(IsSame<Tails<a110>::result, Cons<a110, Cons<a110::tail, Cons<a110::tail::tail, Leaf>>>>::value);
 };
 
+
 // Multiply
 
-/*
+template<class X>
+struct ReturnZero { using result = Zero; };
+
+template<class List>
+struct TrimAndZeroify {
+    using result =
+        typename Map<
+            ReturnZero,
+            typename List::tail
+        >::result;
+};
+
 template<class A, class B>
 struct Multiply{
     using significant_tails =
@@ -487,13 +499,33 @@ struct Multiply{
             typename Tails<B>::result
         >::result;
 
-    using zeroes = Map<TrimAndZeroify, significant_tails>::result;
+    using zeroes =
+        typename Map<
+            TrimAndZeroify,
+            significant_tails
+        >::result;
+
     template<class Right>
-    ConcatA = Concat<A, Right>;
-    using shifted = Map<ConcatA, zeroes>::result;
+    using ConcatA = Concat<A, Right>;
+
+    using shifted = typename Map<ConcatA, zeroes>::result;
     using result = typename FoldL<Add, Leaf, shifted>::result;
 };
-*/
+
+namespace test_Multiply {
+    using a101 = Cons<One, Cons<Zero, Cons<One, Leaf>>>;
+    using a10 = Cons<One, Cons<Zero, Leaf>>;
+    using a1010 = Concat<a101, Cons<Zero, Leaf>>::result;
+    static_assert(IsSame<Multiply<a101, a10>::result, a1010>::value);
+
+    using a11 = Cons<One, Cons<One, Leaf>>;
+    using a1111 = Add<a101, a1010>::result;
+    static_assert(IsSame<Multiply<a101, a11>::result, a1111>::value);
+
+    using a101101 = Concat<a101, a101>::result;
+    static_assert(IsSame<Multiply<a11, a1111>::result, a101101>::value);
+};
+
 
 int main(int argc, char *argv[]) {
     return 0;
