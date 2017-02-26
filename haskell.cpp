@@ -36,6 +36,11 @@ struct Cons {
 
 struct Leaf {};
 
+template<class List>
+struct Head {
+    using result = typename List::head;
+};
+
 
 // Reversal
 
@@ -445,6 +450,29 @@ namespace test_Filter {
     using a00 = Cons<Zero, Cons<Zero, Leaf>>;
 
     static_assert(IsSame<Filter<Id, One, a10110>::result, a111>::value);
+};
+
+
+// Tails
+
+template<class List>
+struct Tails {
+    using subresult = typename Tails<typename List::tail>::result;
+    using result =
+        Cons<
+            List,
+            subresult
+        >;
+};
+
+template<>
+struct Tails<Leaf> {
+    using result = Leaf;
+};
+
+namespace test_Tails {
+    using a110 = Cons<One, Cons<One, Cons<Zero, Leaf>>>;
+    static_assert(IsSame<Tails<a110>::result, Cons<a110, Cons<a110::tail, Cons<a110::tail::tail, Leaf>>>>::value);
 };
 
 // Multiply
