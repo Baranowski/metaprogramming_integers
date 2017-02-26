@@ -10,6 +10,12 @@ struct IsSame<A, A> {
     static constexpr bool value = true;
 };
 
+
+// Id
+
+template<class A>
+struct Id { using result = A; };
+
 // Bit definition
 
 struct Zero {};
@@ -25,6 +31,7 @@ template <class Head, class Tail>
 struct Cons {
     using head = Head;
     using tail = Tail;
+    using result = Cons<Head, Tail>;
 };
 
 struct Leaf {};
@@ -379,6 +386,86 @@ namespace test_Add {
     using a101011 = Cons<One, Cons<Zero, Cons<One, Cons<Zero, Cons<One, Cons<One, Leaf>>>>>>;
     static_assert(IsSame<Add<a01100, a11111>::result, a101011>::value);
 };
+
+
+// Concat
+
+template<class A, class B>
+struct ConcatHelper {
+    using result = Cons<B, A>;
+};
+
+template<class A, class B>
+struct Concat {
+    using reversed =
+        typename FoldL<
+            ConcatHelper,
+            typename Reverse<A>::result,
+            B
+        >::result;
+
+    using result = typename Reverse< reversed >::result;
+};
+
+namespace test_Concat {
+    using a010 = Cons<Zero, Cons<One, Cons<Zero, Leaf>>>;
+    using a11 = Cons<One, Cons<One, Leaf>>;
+    using a01011 = Cons<Zero, Cons<One, Cons<Zero, Cons<One, Cons<One, Leaf>>>>>;
+    static_assert(IsSame<Concat<a010, a11>::result, a01011>::value);
+};
+
+// Filter
+
+template<template <class A> class Func, class Standard, class List>
+struct Filter {
+    using subresult = typename Filter<Func, Standard, typename List::tail>::result;
+    using result =
+        typename IfSameThenElse<
+            typename Func<
+                typename List::head
+            >::result,
+            Standard,
+            Cons<
+                typename List::head,
+                subresult
+            >,
+            subresult
+        >::result;
+};
+
+template<template <class A> class Func, class Standard>
+struct Filter<Func, Standard, Leaf> {
+    using result = Leaf;
+};
+
+namespace test_Filter {
+
+    using a10110 = Cons<One, Cons<Zero, Cons<One, Cons<One, Cons<Zero, Leaf>>>>>;
+    using a111 = Cons<One, Cons<One, Cons<One, Leaf>>>;
+    using a00 = Cons<Zero, Cons<Zero, Leaf>>;
+
+    static_assert(IsSame<Filter<Id, One, a10110>::result, a111>::value);
+};
+
+// Multiply
+
+/*
+template<class A, class B>
+struct Multiply{
+    using significant_tails =
+        typename Filter<
+            Head,
+            One,
+            typename Tails<B>::result
+        >::result;
+
+    using zeroes = Map<TrimAndZeroify, significant_tails>::result;
+    template<class Right>
+    ConcatA = Concat<A, Right>;
+    using shifted = Map<ConcatA, zeroes>::result;
+    using result = typename FoldL<Add, Leaf, shifted>::result;
+};
+*/
 
 int main(int argc, char *argv[]) {
     return 0;
